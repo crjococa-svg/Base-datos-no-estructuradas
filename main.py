@@ -4,7 +4,13 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 
 import datetime
-import subprocess 
+import subprocess
+
+
+def limpiar_pantalla() -> None:
+    comando = "cls" if os.name == "nt" else "clear"
+    subprocess.run(comando, shell=True, check=False)
+
 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -320,7 +326,7 @@ def main():
     insercion_inicial_coleccion_pedidos()
 
     while True:
-        subprocess.run(["cls || clear"], shell=True, check=True)
+        limpiar_pantalla()
         print(
             """
             ===================================================================
@@ -338,7 +344,7 @@ def main():
         )
         opcion = input("Ingresa tu opción [0-6]: ")
 
-        subprocess.run(["cls || clear"], shell=True, check=True)
+        limpiar_pantalla()
         if opcion == "1":
             print("=== CLIENTES REGISTRADOS EL ÚLTIMO AÑO ===")
             clientes_ultimo_año()
