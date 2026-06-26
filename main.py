@@ -1,377 +1,351 @@
 import os
+import json
 from dotenv import load_dotenv
+from pymongo import MongoClient, errors
 
-from pymongo import MongoClient
-
-import datetime
-import subprocess
-
-
-def limpiar_pantalla() -> None:
-    comando = "cls" if os.name == "nt" else "clear"
-    subprocess.run(comando, shell=True, check=False)
-
-
+# Cargar variables de entorno desde el archivo .env
 load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
 
-client: MongoClient = MongoClient(MONGO_URI)
+# CONEXIÓN E INICIALIZACIÓN DE DATOS 
 
-try:
-    print("Estableciendo conexión...⏳")
-    client.admin.command("ping")
-    print("Conexión establecida 😊")
-except:
-    print("❌ ERROR EN LA CONEXIÓN")
-    exit(code=1)
-
-TI3032_U3_EF = client["TI3032_U3_EF"]  # Elijo la base de datos
-
-coleccion_clientes = TI3032_U3_EF["clientes"]  # Seleccion coleccion Clientes
-coleccion_pedidos = TI3032_U3_EF["pedidos"]  # Seleccion coleccion Pedidos
-
-def insercion_inicial_coleccion_clientes() -> None:
-    respuesta = coleccion_clientes.insert_many(
-        [
-            {
-                "_id": 1,
-                "nombre": "Laura Martínez",
-                "email": "laura.martinez@gmail.com",
-                "fecha_registro": "2026-01-15T10:30:00Z",
-                "direccion": "Av. Providencia 1234, Santiago",
-                "telefono": "+56 9 8123 4567",
-            },
-            {
-                "_id": 2,
-                "nombre": "Carlos Rojas",
-                "email": "carlos.rojas@hotmail.com",
-                "fecha_registro": "2025-09-22T14:10:00Z",
-                "direccion": "Calle Los Aromos 456, Valparaíso",
-                "telefono": "+56 9 7234 5678",
-            },
-            {
-                "_id": 3,
-                "nombre": "Fernanda Silva",
-                "email": "fernanda.silva@gmail.com",
-                "fecha_registro": "2024-03-05T09:45:00Z",
-                "direccion": "Pasaje Las Rosas 789, Concepción",
-                "telefono": "+56 9 6345 6789",
-            },
-            {
-                "_id": 4,
-                "nombre": "Javier Torres",
-                "email": "javier.torres@outlook.com",
-                "fecha_registro": "2026-04-18T16:20:00Z",
-                "direccion": "Av. Alemania 321, Temuco",
-                "telefono": "+56 9 5456 7890",
-            },
-            {
-                "_id": 5,
-                "nombre": "Camila Soto",
-                "email": "camila.soto@gmail.com",
-                "fecha_registro": "2025-12-02T11:00:00Z",
-                "direccion": "Calle San Martín 654, La Serena",
-                "telefono": "+56 9 4567 8901",
-            },
-            {
-                "_id": 6,
-                "nombre": "Matías Herrera",
-                "email": "matias.herrera@yahoo.com",
-                "fecha_registro": "2023-07-11T13:25:00Z",
-                "direccion": "Av. Brasil 987, Antofagasta",
-                "telefono": "+56 9 3678 9012",
-            },
-            {
-                "_id": 7,
-                "nombre": "Valentina Fuentes",
-                "email": "valentina.fuentes@gmail.com",
-                "fecha_registro": "2026-02-28T08:15:00Z",
-                "direccion": "Camino El Alba 147, Rancagua",
-                "telefono": "+56 9 2789 0123",
-            },
-            {
-                "_id": 8,
-                "nombre": "Diego Morales",
-                "email": "diego.morales@empresa.cl",
-                "fecha_registro": "2022-10-09T17:40:00Z",
-                "direccion": "Calle Maipú 258, Talca",
-                "telefono": "+56 9 1890 1234",
-            },
-            {
-                "_id": 9,
-                "nombre": "Paula Contreras",
-                "email": "paula.contreras@gmail.com",
-                "fecha_registro": "2025-06-20T12:05:00Z",
-                "direccion": "Av. Costanera 369, Puerto Montt",
-                "telefono": "+56 9 9001 2345",
-            },
-            {
-                "_id": 10,
-                "nombre": "Andrés Vega",
-                "email": "andres.vega@icloud.com",
-                "fecha_registro": "2024-11-30T15:55:00Z",
-                "direccion": "Pasaje Los Pinos 741, Chillán",
-                "telefono": "+56 9 8111 2222",
-            },
+def inicializar_base_de_datos():
+    """Conecta a MongoDB usando variables de entorno, crea la BD prueba3 y pobla las colecciones."""
+    try:
+        # Obtener la URI desde el entorno de manera segura
+        mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+        
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
+        db = client["prueba3"]
+        
+        # Listas json entregadas para la evaluación
+        eventos_data = [
+          {
+            "codigo": "EVT-2025-001", "nombre": "Evento 1 - Datos", "fecha": "2025-12-25T20:00:00Z",
+            "lugar": "Auditorio B", "categoria": "charla",
+            "invitados": [
+              {"rut": "11.118.512-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.098.760-0", "estado": "confirmado", "checkin": False},
+              {"rut": "11.079.008-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.059.256-8", "estado": "confirmado", "checkin": False},
+              {"rut": "11.029.628-9", "estado": "pendiente", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.148.140-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.197.520-0", "estado": "confirmado", "checkin": False},
+              {"rut": "11.187.644-7", "estado": "confirmado", "checkin": False},
+              {"rut": "11.019.752-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.246.900-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.177.768-4", "estado": "pendiente", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "pendiente", "checkin": False},
+              {"rut": "11.237.024-2", "estado": "rechazado", "checkin": False},
+              {"rut": "11.217.272-6", "estado": "pendiente", "checkin": False},
+              {"rut": "11.227.148-9", "estado": "pendiente", "checkin": False},
+              {"rut": "11.128.388-9", "estado": "pendiente", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-002", "nombre": "Evento 2 - Seguridad", "fecha": "2025-12-27T20:00:00Z",
+            "lugar": "Auditorio A", "categoria": "charla",
+            "invitados": [
+              {"rut": "11.158.016-8", "estado": "pendiente", "checkin": False},
+              {"rut": "11.187.644-7", "estado": "pendiente", "checkin": False},
+              {"rut": "11.059.256-8", "estado": "confirmado", "checkin": False},
+              {"rut": "11.088.884-7", "estado": "rechazado", "checkin": False},
+              {"rut": "11.098.760-0", "estado": "rechazado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "pendiente", "checkin": False},
+              {"rut": "11.049.380-5", "estado": "pendiente", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.118.512-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.108.636-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.029.628-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.167.892-1", "estado": "confirmado", "checkin": False},
+              {"rut": "11.217.272-6", "estado": "rechazado", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "confirmado", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-003", "nombre": "Evento 3 - MongoDB", "fecha": "2025-12-27T20:00:00Z",
+            "lugar": "Auditorio B", "categoria": "workshop",
+            "invitados": [
+              {"rut": "11.039.504-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.049.380-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.237.024-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.197.520-0", "estado": "confirmado", "checkin": False},
+              {"rut": "11.128.388-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "confirmado", "checkin": False},
+              {"rut": "11.177.768-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.029.628-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.019.752-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.108.636-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.187.644-7", "estado": "confirmado", "checkin": False},
+              {"rut": "11.098.760-0", "estado": "confirmado", "checkin": False},
+              {"rut": "11.158.016-8", "estado": "confirmado", "checkin": False},
+              {"rut": "11.246.900-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.217.272-6", "estado": "pendiente", "checkin": False},
+              {"rut": "11.227.148-9", "estado": "pendiente", "checkin": False},
+              {"rut": "11.079.008-4", "estado": "pendiente", "checkin": False},
+              {"rut": "11.059.256-8", "estado": "pendiente", "checkin": False},
+              {"rut": "11.118.512-6", "estado": "pendiente", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-004", "nombre": "Evento 4 - DevOps", "fecha": "2025-12-25T19:00:00Z",
+            "lugar": "Auditorio B", "categoria": "meetup",
+            "invitados": [
+              {"rut": "11.079.008-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.128.388-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.246.900-5", "estado": "pendiente", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "confirmado", "checkin": False},
+              {"rut": "11.167.892-1", "estado": "pendiente", "checkin": False},
+              {"rut": "11.158.016-8", "estado": "pendiente", "checkin": False},
+              {"rut": "11.118.512-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "rechazado", "checkin": False},
+              {"rut": "11.177.768-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.088.884-7", "estado": "confirmado", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-005", "nombre": "Evento 5 - MongoDB", "fecha": "2025-12-30T18:00:00Z",
+            "lugar": "Auditorio A", "categoria": "charla",
+            "invitados": [
+              {"rut": "11.197.520-0", "estado": "pendiente", "checkin": False},
+              {"rut": "11.246.900-5", "estado": "rechazado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.158.016-8", "estado": "confirmado", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "rechazado", "checkin": False},
+              {"rut": "11.118.512-6", "estado": "pendiente", "checkin": False},
+              {"rut": "11.029.628-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.039.504-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.128.388-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "rechazado", "checkin": False},
+              {"rut": "11.079.008-4", "estado": "pendiente", "checkin": False},
+              {"rut": "11.187.644-7", "estado": "confirmado", "checkin": False},
+              {"rut": "11.217.272-6", "estado": "pendiente", "checkin": False},
+              {"rut": "11.108.636-3", "estado": "rechazado", "checkin": False},
+              {"rut": "11.059.256-8", "estado": "pendiente", "checkin": False},
+              {"rut": "11.019.752-6", "estado": "confirmado", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-006", "nombre": "Evento 6 - MongoDB", "fecha": "2025-12-24T20:00:00Z",
+            "lugar": "Auditorio B", "categoria": "charla",
+            "invitados": [
+              {"rut": "11.237.024-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "pendiente", "checkin": False},
+              {"rut": "11.039.504-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.167.892-1", "estado": "confirmado", "checkin": False},
+              {"rut": "11.049.380-5", "estado": "pendiente", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "pendiente", "checkin": False},
+              {"rut": "11.187.644-7", "estado": "rechazado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "pendiente", "checkin": False},
+              {"rut": "11.088.884-7", "estado": "pendiente", "checkin": False},
+              {"rut": "11.227.148-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.246.900-5", "estado": "pendiente", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-007", "nombre": "Evento 7 - Datos", "fecha": "2025-12-29T18:00:00Z",
+            "lugar": "Sala 204", "categoria": "charla",
+            "invitados": [
+              {"rut": "11.217.272-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.009.876-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.108.636-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.019.752-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.148.140-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.079.008-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.177.768-4", "estado": "confirmado", "checkin": False},
+              {"rut": "11.158.016-8", "estado": "confirmado", "checkin": False},
+              {"rut": "11.128.388-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.118.512-6", "estado": "confirmado", "checkin": False},
+              {"rut": "11.049.380-5", "estado": "confirmado", "checkin": False},
+              {"rut": "11.227.148-9", "estado": "confirmado", "checkin": False},
+              {"rut": "11.207.396-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.197.520-0", "estado": "confirmado", "checkin": False},
+              {"rut": "11.088.884-7", "estado": "confirmado", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "rechazado", "checkin": False},
+              {"rut": "11.237.024-2", "estado": "pendiente", "checkin": False},
+              {"rut": "11.059.256-8", "estado": "rechazado", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "pendiente", "checkin": False},
+              {"rut": "11.039.504-2", "estado": "pendiente", "checkin": False}
+            ]
+          },
+          {
+            "codigo": "EVT-2025-008", "nombre": "Evento 8 - Seguridad", "fecha": "2025-12-28T19:00:00Z",
+            "lugar": "Auditorio B", "categoria": "workshop",
+            "invitados": [
+              {"rut": "11.128.388-9", "estado": "pendiente", "checkin": False},
+              {"rut": "11.148.140-5", "estado": "rechazado", "checkin": False},
+              {"rut": "11.108.636-3", "estado": "confirmado", "checkin": False},
+              {"rut": "11.029.628-9", "estado": "pendiente", "checkin": False},
+              {"rut": "11.079.008-4", "estado": "pendiente", "checkin": False},
+              {"rut": "11.138.264-2", "estado": "confirmado", "checkin": False},
+              {"rut": "11.217.272-6", "estado": "rechazado", "checkin": False},
+              {"rut": "11.069.132-1", "estado": "rechazado", "checkin": False},
+              {"rut": "11.098.760-0", "estado": "confirmado", "checkin": False}
+            ]
+          }
         ]
-    )
-
-    print(respuesta)
-
-
-def insercion_inicial_coleccion_pedidos() -> None:
-    respuesta = coleccion_pedidos.insert_many(
-        [
-            {
-                "cliente_id": 1,
-                "fecha_pedido": "2026-02-10T10:00:00Z",
-                "monto_total": 245.90,
-                "productos": [
-                    {"producto_id": 101, "cantidad": 1, "precio": 120.00},
-                    {"producto_id": 205, "cantidad": 2, "precio": 62.95},
-                ],
-            },
-            {
-                "cliente_id": 2,
-                "fecha_pedido": "2025-10-01T13:30:00Z",
-                "monto_total": 89.50,
-                "productos": [{"producto_id": 302, "cantidad": 1, "precio": 89.50}],
-            },
-            {
-                "cliente_id": 3,
-                "fecha_pedido": "2023-04-15T09:20:00Z",
-                "monto_total": 560.00,
-                "productos": [
-                    {"producto_id": 101, "cantidad": 2, "precio": 180.00},
-                    {"producto_id": 410, "cantidad": 1, "precio": 200.00},
-                ],
-            },
-            {
-                "cliente_id": 4,
-                "fecha_pedido": "2026-05-03T18:45:00Z",
-                "monto_total": 720.35,
-                "productos": [
-                    {"producto_id": 508, "cantidad": 1, "precio": 450.35},
-                    {"producto_id": 207, "cantidad": 3, "precio": 90.00},
-                ],
-            },
-            {
-                "cliente_id": 5,
-                "fecha_pedido": "2026-01-20T11:10:00Z",
-                "monto_total": 135.75,
-                "productos": [{"producto_id": 101, "cantidad": 1, "precio": 135.75}],
-            },
-            {
-                "cliente_id": 6,
-                "fecha_pedido": "2023-11-22T16:05:00Z",
-                "monto_total": 42.99,
-                "productos": [{"producto_id": 601, "cantidad": 1, "precio": 42.99}],
-            },
-            {
-                "cliente_id": 7,
-                "fecha_pedido": "2026-03-14T12:35:00Z",
-                "monto_total": 980.00,
-                "productos": [
-                    {"producto_id": 305, "cantidad": 2, "precio": 250.00},
-                    {"producto_id": 412, "cantidad": 4, "precio": 120.00},
-                ],
-            },
-            {
-                "cliente_id": 8,
-                "fecha_pedido": "2024-08-19T19:00:00Z",
-                "monto_total": 310.40,
-                "productos": [{"producto_id": 208, "cantidad": 1, "precio": 310.40}],
-            },
-            {
-                "cliente_id": 9,
-                "fecha_pedido": "2025-07-08T15:25:00Z",
-                "monto_total": 515.20,
-                "productos": [
-                    {"producto_id": 101, "cantidad": 1, "precio": 215.20},
-                    {"producto_id": 509, "cantidad": 2, "precio": 150.00},
-                ],
-            },
-            {
-                "cliente_id": 10,
-                "fecha_pedido": "2023-01-30T08:50:00Z",
-                "monto_total": 155.00,
-                "productos": [{"producto_id": 706, "cantidad": 5, "precio": 31.00}],
-            },
-            {
-                "cliente_id": 1,
-                "fecha_pedido": "2023-09-12T14:15:00Z",
-                "monto_total": 75.60,
-                "productos": [{"producto_id": 333, "cantidad": 2, "precio": 37.80}],
-            },
-            {
-                "cliente_id": 2,
-                "fecha_pedido": "2026-04-09T10:40:00Z",
-                "monto_total": 640.90,
-                "productos": [
-                    {"producto_id": 101, "cantidad": 3, "precio": 120.00},
-                    {"producto_id": 804, "cantidad": 1, "precio": 280.90},
-                ],
-            },
-            {
-                "cliente_id": 5,
-                "fecha_pedido": "2025-12-18T17:30:00Z",
-                "monto_total": 98.00,
-                "productos": [{"producto_id": 212, "cantidad": 2, "precio": 49.00}],
-            },
-            {
-                "cliente_id": 7,
-                "fecha_pedido": "2023-06-25T20:10:00Z",
-                "monto_total": 430.00,
-                "productos": [{"producto_id": 610, "cantidad": 1, "precio": 430.00}],
-            },
-            {
-                "cliente_id": 9,
-                "fecha_pedido": "2026-05-28T09:05:00Z",
-                "monto_total": 110.30,
-                "productos": [{"producto_id": 715, "cantidad": 1, "precio": 110.30}],
-            },
+        
+        invitados_data = [
+            {"rut": "11.009.876-3", "nombre": "Camila Herrera", "correo": "camila.herrera@empresa.cl", "empresa": "EmpresaX", "estado": "bloqueado"},
+            {"rut": "11.019.752-6", "nombre": "Carla Rojas", "correo": "carla.rojas@empresa.cl", "empresa": "BlueCom", "estado": "activo"},
+            {"rut": "11.029.628-9", "nombre": "Luis Fernández", "correo": "luis.fernandez@contratista.cl", "empresa": "DataShield", "estado": "activo"},
+            {"rut": "11.039.504-2", "nombre": "Ana Martínez", "correo": "ana.martinez@empresa.cl", "empresa": "Inacap", "estado": "activo"},
+            {"rut": "11.049.380-5", "nombre": "Diego López", "correo": "diego.lopez@empresa.cl", "empresa": "EmpresaX", "estado": "activo"},
+            {"rut": "11.059.256-8", "nombre": "María González", "correo": "maria.gonzalez@inacap.cl", "empresa": "DataShield", "estado": "bloqueado"},
+            {"rut": "11.069.132-1", "nombre": "José Pérez", "correo": "jose.perez@contratista.cl", "empresa": "EmpresaX", "estado": "activo"},
+            {"rut": "11.079.008-4", "nombre": "Felipe Castro", "correo": "felipe.castro@contratista.cl", "empresa": "DataShield", "estado": "activo"},
+            {"rut": "11.088.884-7", "nombre": "Valentina Soto", "correo": "valentina.soto@empresa.cl", "empresa": "AndesLog", "estado": "activo"},
+            {"rut": "11.098.760-0", "nombre": "Ricardo Núñez", "correo": "ricardo.nunez@empresa.cl", "empresa": "AndesLog", "estado": "activo"},
+            {"rut": "11.108.636-3", "nombre": "Tomás Vergara", "correo": "tomas.vergara@contratista.cl", "empresa": "Inacap", "estado": "activo"},
+            {"rut": "11.118.512-6", "nombre": "Daniela Salinas", "correo": "daniela.salinas@contratista.cl", "empresa": "BlueCom", "estado": "activo"},
+            {"rut": "11.128.388-9", "nombre": "Andrés Muñoz", "correo": "andres.munoz@empresa.cl", "empresa": "EmpresaX", "estado": "activo"},
+            {"rut": "11.138.264-2", "nombre": "Fernanda Campos", "correo": "fernanda.campos@contratista.cl", "empresa": "CyberLab", "estado": "activo"},
+            {"rut": "11.148.140-5", "nombre": "Javier Ortiz", "correo": "javier.ortiz@contratista.cl", "empresa": "NorteDigital", "estado": "activo"},
+            {"rut": "11.158.016-8", "nombre": "Paula Rivera", "correo": "paula.rivera@empresa.cl", "empresa": "TechNova", "estado": "activo"},
+            {"rut": "11.167.892-1", "nombre": "Cristóbal Sáez", "correo": "cristobal.saez@contratista.cl", "empresa": "AndesLog", "estado": "activo"},
+            {"rut": "11.177.768-4", "nombre": "Ignacia Torres", "correo": "ignacia.torres@empresa.cl", "empresa": "NorteDigital", "estado": "activo"},
+            {"rut": "11.187.644-7", "nombre": "Matías Castillo", "correo": "matias.castillo@empresa.cl", "empresa": "Inacap", "estado": "activo"},
+            {"rut": "11.197.520-0", "nombre": "Rocío Paredes", "correo": "rocio.paredes@empresa.cl", "empresa": "BlueCom", "estado": "bloqueado"},
+            {"rut": "11.207.396-3", "nombre": "Sebastián Fuentes", "correo": "sebastian.fuentes@empresa.cl", "empresa": "EmpresaX", "estado": "activo"},
+            {"rut": "11.217.272-6", "nombre": "Gabriela Vega", "correo": "gabriela.vega@inacap.cl", "empresa": "BlueCom", "estado": "bloqueado"},
+            {"rut": "11.227.148-9", "nombre": "Nicolás Araya", "correo": "nicolas.araya@empresa.cl", "empresa": "NorteDigital", "estado": "activo"},
+            {"rut": "11.237.024-2", "nombre": "Catalina Contreras", "correo": "catalina.contreras@contratista.cl", "empresa": "Inacap", "estado": "activo"},
+            {"rut": "11.246.900-5", "nombre": "Joaquín Reyes", "correo": "joaquin.reyes@inacap.cl", "empresa": "Inacap", "estado": "activo"}
         ]
-    )
+
+        # Limpiar colecciones previas para asegurar datos limpios en cada ejecución
+        db["eventos"].drop()
+        db["invitados"].drop()
+        
+        db["eventos"].insert_many(eventos_data)
+        db["invitados"].insert_many(invitados_data)
+        return db
+    except errors.ServerSelectionTimeoutError:
+        print("[!] ERROR: No se pudo conectar a MongoDB. Revisa tu archivo .env o el estado del servicio.")
+        return None
+
+# RUTINAS DE BÚSQUEDA AVANZADA
+
+def listar_eventos(db):
+    """Actividad 1:	Listado de eventos con código, nombre, fecha, lugar y categoría"""
+    print("\n========================================================")
+    print("      LISTADO DE EVENTOS DISPONIBLES EN SISTEMA")
+    print("========================================================")
     
-    print(respuesta)
+    # Proyección explícita eliminando el _id para cumplir con formatos limpios
+    proyeccion = {"codigo": 1, "nombre": 1, "fecha": 1, "lugar": 1, "categoria": 1, "_id": 0}
+    eventos = db["eventos"].find({}, proyeccion)
+    
+    for ev in eventos:
+        print(f"Código: {ev['codigo']} | Nombre: {ev['nombre']}")
+        print(f"Fecha:  {ev['fecha']} | Lugar: {ev['lugar']}")
+        print(f"Categoría: {ev['categoria']}")
+        print("-" * 52)
 
-def clientes_ultimo_año() -> None:
-    # Calcular la fecha de hoy en el año pasado
-    fecha_de_hoy = datetime.datetime.now()
-    año_pasado = fecha_de_hoy.year - 1
-    fecha_a_consultar = datetime.date(
-        year=año_pasado,
-        month=fecha_de_hoy.month,
-        day=fecha_de_hoy.day
-    )
-    # Consulta desde el año pasado hasta hoy
-    query = {"fecha_registro" : { "$gte": f"{fecha_a_consultar}T00:00:00Z" } }
-    resultado = coleccion_clientes.aggregate([
-        { "$match": query  },
-        { "$sort": { "fecha_registro": -1 } }
-    ])
-    # Mostrar resultado
-    for doc in resultado:
-        print(doc)
+def buscar_invitados_regex(db):
+    """Actividad 2: Listado de invitados, aplicando filtros con regex."""
+    print("\n========================================================")
+    print("       BÚSQUEDA AVANZADA DE INVITADOS (REGEX)")
+    print("========================================================")
+    print("1. Buscar por concordancia de nombre parcial")
+    print("2. Buscar por dominio corporativo de correo (Ej: inacap.cl)")
+    opcion = input("Seleccione una opción de búsqueda (1-2): ")
+    
+    query = {}
+    if opcion == "1":
+        patron = input("Ingrese el texto o nombre a buscar: ")
+        # Opción 'i' para búsqueda no sensible a mayúsculas
+        query = {"nombre": {"$regex": patron, "$options": "i"}}
+    elif opcion == "2":
+        dominio = input("Ingrese el dominio de correo (ej: empresa.cl): ")
+        # Asegura la búsqueda al final de la cadena de texto ($)
+        query = {"correo": {"$regex": f"@{dominio}$", "$options": "i"}}
+    else:
+        print("[!] Opción inválida.")
+        return
 
-# 2. Encuentra todos los pedidos cuyo monto total sea superior a $100.
-def pedidos_monto_mayor_100() -> None:
-    query = {"monto_total": {"$gt": 100.00}}
-    resultado = coleccion_pedidos.find(query)
-    for doc in resultado:
-        print(doc)
+    invitados = db["invitados"].find(query, {"_id": 0})
+    cantidad = db["invitados"].count_documents(query)
+    
+    print(f"\nResultados encontrados: {cantidad}\n")
+    for inv in invitados:
+        print(f"RUT: {inv['rut']} | Nombre: {inv['nombre']} | Estado: {inv['estado']}")
+        print(f"Email: {inv['correo']} | Empresa: {inv['empresa']}")
+        print("-" * 56)
 
-# 3. Encuentra todos los clientes cuyo email pertenezca al dominio "gmail.com".
-def clientes_email_gmail() -> None:
-    query = {"email": {"$regex": "@gmail\\.com$", "$options": "i"}}
-    resultado = coleccion_clientes.find(query)
-    for doc in resultado:
-        print(doc)
+def validar_acceso_cruzado(db):
+    """Actividad 3	Validación de acceso a eventos con búsqueda cruzada(usar lookup))."""
 
-# 4. Encuentra todos los pedidos realizados en el año 2023.
-def pedidos_año_2023() -> None:
-    query = {
-        "fecha_pedido": {
-            "$gte": "2023-01-01T00:00:00Z",
-            "$lte": "2023-12-31T23:59:59Z"
-        }
-    }
-    resultado = coleccion_pedidos.find(query)
-    for doc in resultado:
-        print(doc)
-
-# 5. Encuentra todos los pedidos que contengan un producto con producto_id igual a 101.
-def pedidos_producto_101() -> None:
-    query = {"productos.producto_id": 101}
-    resultado = coleccion_pedidos.find(query)
-    for doc in resultado:
-        print(doc)
-
-# 6. Clientes con al menos un pedido superior a $500 en el último año.
-def clientes_pedidos_complejos_500() -> None:
-    fecha_de_hoy = datetime.datetime.now()
-    año_pasado = fecha_de_hoy.year - 1
-    fecha_a_consultar = f"{año_pasado}-{fecha_de_hoy.month:02d}-{fecha_de_hoy.day:02d}T00:00:00Z"
+def top_eventos_confirmados(db):
+    """Actividad 4: Top 3 eventos con mayor número de invitados confirmados."""
+    print("\n========================================================")
+    print("        TOP 3 EVENTOS CON MÁS INVITADOS CONFIRMADOS")
+    print("========================================================")
     
     pipeline = [
+        {"$unwind": "$invitados"},
+        {"$match": {"invitados.estado": "confirmado"}},
         {
-            "$lookup": {
-                "from": "pedidos",
-                "localField": "_id",
-                "foreignField": "cliente_id",
-                "as": "pedidos_asociados"
+            "$group": {
+                "_id": {
+                    "codigo": "$codigo",
+                    "nombre": "$nombre",
+                    "lugar": "$lugar"
+                },
+                "total_confirmados": {"$sum": 1}
             }
         },
-        {
-            "$match": {
-                "pedidos_asociados": {
-                    "$elemMatch": {
-                        "monto_total": {"$gt": 500.00},
-                        "fecha_pedido": {"$gte": fecha_a_consultar}
-                    }
-                }
-            }
-        }
+        {"$sort": {"total_confirmados": -1}},
+        {"$limit": 3}
     ]
-    resultado = coleccion_clientes.aggregate(pipeline)
-    for doc in resultado:
-        print(doc)
+    
+    resultados = db["eventos"].aggregate(pipeline)
+    
+    for i, res in enumerate(resultados, 1):
+        info = res["_id"]
+        print(f"{i}°. {info['nombre']} ({info['codigo']})")
+        print(f"    Ubicación: {info['lugar']} | Invitados Confirmados: {res['total_confirmados']}")
+        print("-" * 56)
 
-def main():
-    # Reiniciar colecciones para pruebas limpias
-    coleccion_clientes.drop()
-    coleccion_pedidos.drop()
-
-    insercion_inicial_coleccion_clientes()
-    insercion_inicial_coleccion_pedidos()
+# ----------------------------
+# MENÚ INTERACTIVO PRINCIPAL
+# ----------------------------
+def menu_principal():
+    db = inicializar_base_de_datos()
+    if db is None:
+        return
 
     while True:
-        limpiar_pantalla()
-        print(
-            """
-            ===================================================================
-            |                       PYMONGO ECOMMERCE                         |
-            ===================================================================
-            1. Clientes registrados en el último año.
-            2. Pedidos con monto total superior a $100.
-            3. Clientes con email del dominio 'gmail.com'.
-            4. Pedidos realizados en el año 2023.
-            5. Pedidos con el producto_id igual a 101.
-            6. Clientes con pedidos > $500 en el último año (Consulta Compleja).
-            0. Salir.
-            ===================================================================
-            """
-        )
-        opcion = input("Ingresa tu opción [0-6]: ")
-
-        limpiar_pantalla()
+        print("\n========================================================")
+        print("          SISTEMA DE GESTIÓN DE EVENTOS E INVITADOS")
+        print("========================================================")
+        print("1. Mostrar todos los eventos")
+        print("2. Buscar invitados mediante expresiones regulares")
+        print("3. Validar acceso a evento")
+        print("4. Ver Top 3 eventos con más confirmados")
+        print("5. Salir")
+        print("========================================================")
+        
+        opcion = input("Seleccione una opción (1-5): ")
+        
         if opcion == "1":
-            print("=== CLIENTES REGISTRADOS EL ÚLTIMO AÑO ===")
-            clientes_ultimo_año()
+            listar_eventos(db)
         elif opcion == "2":
-            print("=== PEDIDOS CON MONTO MAYORES A $100 ===")
-            pedidos_monto_mayor_100()
+            buscar_invitados_regex(db)
         elif opcion == "3":
-            print("=== CLIENTES CON EMAIL GMAIL.COM ===")
-            clientes_email_gmail()
+            validar_acceso_cruzado(db)
         elif opcion == "4":
-            print("=== PEDIDOS REALIZADOS EN EL AÑO 2023 ===")
-            pedidos_año_2023()
+            top_eventos_confirmados(db)
         elif opcion == "5":
-            print("=== PEDIDOS CON PRODUCTO ID 101 ===")
-            pedidos_producto_101()
-        elif opcion == "6":
-            print("=== CLIENTES CON PEDIDOS > $500 EN EL ÚLTIMO AÑO ===")
-            clientes_pedidos_complejos_500()
-        elif opcion == "0":
-            input("Adiós. Presiona ENTER para salir...")
+            print("\nCerrando aplicación. Evaluación completada de manera exitosa.")
             break
         else:
-            print("Opción incorrecta.")
-        
-        input("\nPresiona ENTER para continuar...")
-    
-    exit()
+            print("[!] Opción no válida. Por favor, intente de nuevo.")
 
 if __name__ == "__main__":
-    main()
+    menu_principal() 
